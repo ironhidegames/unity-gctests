@@ -23,17 +23,24 @@ public class GarbageTestScript : MonoBehaviour {
 	public Text currentModeText;
 
 	[NonSerialized]
-	bool[] modes = new bool[7];
+	bool[] modes = new bool[8];
 
-	List<Action<object>> list = new  List<Action<object>>(); 
+	// List<Action<object>> list = new  List<Action<object>>(); 
 	List<MegaCallbackDelegate> listWithDelegates = new  List<MegaCallbackDelegate>(); 
 
 	public int superValue = 0;
 
-	static MegaCallbackDelegate myDelegate = delegate(object obj) {
+	static MegaCallbackDelegate myDelegateStatic = delegate(object obj) {
 		GarbageTestScript garbageTest = obj as GarbageTestScript;
 		return garbageTest.superValue++;
 	};
+
+	MegaCallbackDelegate myDelegateLocal;
+
+//	MegaCallbackDelegate localDelegate = delegate(object obj) {
+//		GarbageTestScript garbageTest = obj as GarbageTestScript;
+//		return garbageTest.superValue++;
+//	};
 
 	public static int StaticCallbackCode (object o)
 	{
@@ -50,6 +57,14 @@ public class GarbageTestScript : MonoBehaviour {
 	{
 		GarbageTestScript t = o as GarbageTestScript;
 		return t.superValue++;
+	}
+
+	void Awake()
+	{
+		myDelegateLocal = delegate(object obj) {
+			this.superValue = 0;
+			return this.superValue;
+		};
 	}
 
 	void Start () {
@@ -75,16 +90,16 @@ public class GarbageTestScript : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
 	
-		list.Clear ();
 		listWithDelegates.Clear ();
+		// listWithDelegates.Clear ();
 
 		if (modes [0]) {
 
 			Profiler.BeginSample ("Modo1");
 			//forma 1
 			for (int i = 0; i < actions; i++) {
-				list.Add (delegate(object obj) {
-					this.superValue++;
+				listWithDelegates.Add (delegate(object obj) {
+					return this.superValue++;
 				});
 			}
 			Profiler.EndSample ();
@@ -115,9 +130,9 @@ public class GarbageTestScript : MonoBehaviour {
 			//forma 1
 			Profiler.BeginSample ("Modo4");
 			for (int i = 0; i < actions; i++) {
-				list.Add (delegate(object obj) {
+				listWithDelegates.Add (delegate(object obj) {
 					GarbageTestScript garbageTest = obj as GarbageTestScript;
-					garbageTest.superValue++;
+					return garbageTest.superValue++;
 				});
 			}
 			Profiler.EndSample ();
@@ -142,7 +157,15 @@ public class GarbageTestScript : MonoBehaviour {
 		if (modes [6]) {
 			Profiler.BeginSample ("Modo7");
 			for (int i = 0; i < actions; i++) {
-				listWithDelegates.Add (GarbageTestScript.myDelegate);
+				listWithDelegates.Add (GarbageTestScript.myDelegateStatic);
+			}
+			Profiler.EndSample ();
+		}
+
+		if (modes [7]) {
+			Profiler.BeginSample ("Modo8");
+			for (int i = 0; i < actions; i++) {
+				listWithDelegates.Add (this.myDelegateLocal);
 			}
 			Profiler.EndSample ();
 		}
